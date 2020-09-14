@@ -7,27 +7,35 @@ import (
 )
 
 func main() {
+	ports := make(chan int, 100)
 	var wg sync.WaitGroup
-	for i := 0; i <= 1024; i++ {
-		wg.Add(1)
-		go scanPort(i, &wg)
+
+	for i := 0; i < cap(ports); i++ {
+		go scanPort(ports, &wg)
 	}
+
+	for i := 1; i <= 1024; i++ {
+		wg.Add(1)
+		ports <- i
+	}
+
 	wg.Wait()
+	close(ports)
 }
 
-func scanPort(p int, wg *sync.WaitGroup) {
-	defer wg.Done()
+func scanPort(ports chan int, wg *sync.WaitGroup) {
+	for p := range ports {
 
-	fmt.Printf("Scan of %d starting... \n", p)
+		address := fmt.Sprintf("scanme.nmap.org:%d", p)
+		conn, err := net.Dial("tcp", address)
 
-	address := fmt.Sprintf("scanme.nmap.org:%d", p)
-	conn, err := net.Dial("tcp", address)
+		if err != nil {
+			// Port closed / filtered
+			return
+		}
 
-	if err != nil {
-		// Port closed / filtered
-		return
+		conn.Close()
+		fmt.Printf("%d is open \n", p)
+		wg.Done()
 	}
-
-	conn.Close()
-	fmt.Printf("%d is open \n", p)
 }
