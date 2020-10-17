@@ -1,3 +1,3 @@
-# black-hat-go
+# black-hat
 
-Mastering the magic of Go using the book "Black Hat Go" 
+Collection of scripts I use on my CTF challenges
